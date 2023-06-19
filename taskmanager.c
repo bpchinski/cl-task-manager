@@ -8,6 +8,7 @@
 #include <psapi.h>
 #include <tchar.h>
 #include <sddl.h>
+#include <conio.h>  // For _getch()
 
 void GetProcessOwner(DWORD processID, TCHAR* szOwner, size_t ownerBufferSize) {
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processID);
@@ -131,6 +132,19 @@ void printProcesses() {
 }
 
 int main() {
-    printProcesses();
+    while (1) {  // Infinite loop
+        printProcesses();  // Print the process table
+
+        printf("\nOption? ");
+        char option = _getch();  // Get the user's input
+
+        if (option == 'r') {
+            system("cls");  // Clear the console
+        } else if (option == 'q') {
+            system("cls");  // Clear the console
+            break;  // Break the loop
+        }
+    }
+
     return 0;
 }
