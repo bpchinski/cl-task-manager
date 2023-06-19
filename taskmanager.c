@@ -143,6 +143,9 @@ int main() {
         } else if (option == 'q') {
             system("cls");  // Clear the console
             break;  // Break the loop
+        } else {
+            system("cls");  // Clear the console
+            printf("Invalid option!\n\n");
         }
     }
 
