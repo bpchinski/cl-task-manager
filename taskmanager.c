@@ -94,7 +94,7 @@ void printProcessInformation(DWORD processID) {
 
    // Skip printing if the process name is "unknown"
     if (_tcscmp(szProcessName, TEXT("<unknown>")) != 0) {
-        _tprintf(TEXT("%-32s %-15s %-32s\n"), szProcessName, szRAMUsage, szOwner);
+        _tprintf(TEXT("%-32s %-16s %-32s\n"), szProcessName, szRAMUsage, szOwner);
     }
 
     // Close the process handle as it's no longer needed
@@ -121,7 +121,7 @@ void printProcesses() {
 
     // Print header for the table
     printf("Controls:\n\ninput: 'q' to quit \ninput: 'r' to refresh\n\n");
-    _tprintf(TEXT("%-32s %-15s %-32s\n"), TEXT("Process Name"), TEXT("RAM Usage"), TEXT("Owner"));  // Update the table header
+    _tprintf(TEXT("%-32s %-16s %-32s\n"), TEXT("Process Name"), TEXT("RAM Usage"), TEXT("Owner"));  // Update the table header
     _tprintf(TEXT("-------------------------------- ---------------- ---------------\n"));
 
     for (i = 0; i < cProcesses; i++) {
