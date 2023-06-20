@@ -64,21 +64,18 @@ void GetProcessOwner(DWORD processID, TCHAR* szOwner, size_t ownerBufferSize) {
 
 // Function to print the process name and ID.
 void printProcessInformation(DWORD processID) {
-    // szProcessName is the name of the process
     TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
     TCHAR szRAMUsage[32] = TEXT("N/A");
-    TCHAR szOwner[256] = TEXT("N/A");  // New variable for the owner
+    TCHAR szOwner[256] = TEXT("N/A");
+    TCHAR szPath[MAX_PATH] = TEXT("N/A");  // New variable for the path
+    TCHAR szCPUTime[64] = TEXT("N/A");  // New variable for the CPU time
 
-    // Open a handle to the specified process
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
 
-    // Get the process name
     if (NULL != hProcess) {
         HMODULE hMod;
         DWORD cbNeeded;
 
-        // EnumProcessModules is a WindowsAPI function that retrieves a handle for each module in the specified process
-        // GetModuleBaseName is a WindowsAPI function that retrieves the base name of the specified module
         if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
             GetModuleBaseName(hProcess, hMod, szProcessName, sizeof(szProcessName) / sizeof(TCHAR));
         }
@@ -88,15 +85,35 @@ void printProcessInformation(DWORD processID) {
             _stprintf_s(szRAMUsage, sizeof(szRAMUsage) / sizeof(TCHAR), TEXT("%lu KB"), pmc.WorkingSetSize / 1024);
         }
 
-        // Get the owner information
         GetProcessOwner(processID, szOwner, sizeof(szOwner) / sizeof(TCHAR));
-    }
 
-   // Skip printing if the process name is "unknown"
+        // Get the path to the executable
+        DWORD dwSize = MAX_PATH;
+        if (QueryFullProcessImageName(hProcess, 0, szPath, &dwSize)) {
+            // Successfully retrieved the path
+        } else {
+            _tcscpy(szPath, TEXT("N/A"));
+        }
+
+        // Get the CPU time
+        FILETIME ftCreation, ftExit, ftKernel, ftUser;
+        if (GetProcessTimes(hProcess, &ftCreation, &ftExit, &ftKernel, &ftUser)) {
+            ULARGE_INTEGER ulKernel, ulUser;
+            ulKernel.LowPart = ftKernel.dwLowDateTime;
+            ulKernel.HighPart = ftKernel.dwHighDateTime;
+            ulUser.LowPart = ftUser.dwLowDateTime;
+            ulUser.HighPart = ftUser.dwHighDateTime;
+
+            ULONGLONG ullCPUTime = ulKernel.QuadPart + ulUser.QuadPart;
+            ullCPUTime /= 10000;  // Convert to milliseconds
+            _stprintf_s(szCPUTime, sizeof(szCPUTime) / sizeof(TCHAR), TEXT("%llu ms"), ullCPUTime);
+        } else {
+            _tcscpy(szCPUTime, TEXT("N/A"));
+        }
+    }
     if (_tcscmp(szProcessName, TEXT("<unknown>")) != 0) {
-        _tprintf(TEXT("%-32s %-16s %-32s\n"), szProcessName, szRAMUsage, szOwner);
+        _tprintf(TEXT("%-32s %-12s %-12s %-12s %-244s\n"), szProcessName, szRAMUsage, szOwner, szCPUTime, szPath);
     }
-
     // Close the process handle as it's no longer needed
     CloseHandle(hProcess);
 }
@@ -121,8 +138,8 @@ void printProcesses() {
 
     // Print header for the table
     printf("Controls:\n\ninput: 'q' to quit \ninput: 'r' to refresh\n\n");
-    _tprintf(TEXT("%-32s %-16s %-32s\n"), TEXT("Process Name"), TEXT("RAM Usage"), TEXT("Owner"));  // Update the table header
-    _tprintf(TEXT("-------------------------------- ---------------- ---------------\n"));
+    _tprintf(TEXT("%-32s %-12s %-12s %-12s %-244s\n"), TEXT("Process Name"), TEXT("RAM Usage"), TEXT("Owner"), TEXT("CPU Time"), TEXT("Path"));
+    _tprintf(TEXT("-------------------------------- ------------ ------------ ------------ ----------------------------------------------------------------------------------------\n"));
 
     for (i = 0; i < cProcesses; i++) {
         if (aProcesses[i] != 0) {
